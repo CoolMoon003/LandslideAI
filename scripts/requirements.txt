@@ -1,0 +1,10 @@
+requests
+geopandas
+shapely
+rasterio
+numpy
+pandas
+scikit-learn
+shap
+imbalanced-learn
+tqdm

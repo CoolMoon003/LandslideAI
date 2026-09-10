@@ -1,0 +1,3065 @@
+﻿
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\Charts.jsx =====
+
+import React from "react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+
+const RISK_COLORS = {
+  LOW: "#22a06b",
+  MODERATE: "#e3b93a",
+  ELEVATED: "#f0973f",
+  HIGH: "#ef7a53",
+  "VERY HIGH": "#e0453f",
+  EXTREME: "#8f1f26",
+};
+
+function toArray(data) {
+  if (Array.isArray(data)) return data;
+
+  if (!data || typeof data !== "object") return [];
+
+  // Common API wrappers
+  if (Array.isArray(data.features)) return data.features;
+  if (Array.isArray(data.data)) return data.data;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.results)) return data.results;
+
+  // Feature importance may be returned as:
+  // { slope: 0.46, elevation: 0.25, ... }
+  return Object.entries(data)
+    .filter(([, value]) => typeof value === "number")
+    .map(([key, value]) => ({
+      feature: key,
+      importance: value,
+    }));
+}
+
+export function FeatureChart({ data }) {
+  const raw = toArray(data);
+
+  const chartData = raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+
+      const name =
+        item.feature ??
+        item.name ??
+        item.feature_name ??
+        item.label ??
+        Object.keys(item)[0];
+
+      const value =
+        item.importance ??
+        item.value ??
+        item.score ??
+        item.weight ??
+        0;
+
+      return {
+        name: String(name).replaceAll("_", " "),
+        value: Number(value) || 0,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
+  if (!chartData.length) {
+    return (
+      <div className="empty-chart">
+        No feature-importance data available.
+      </div>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <BarChart
+        data={chartData}
+        layout="vertical"
+        margin={{ top: 10, right: 25, left: 20, bottom: 10 }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis
+          type="number"
+          domain={[0, "auto"]}
+          tickFormatter={(value) =>
+            `${(Number(value) * 100).toFixed(0)}%`
+          }
+        />
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={100}
+        />
+        <Tooltip
+          formatter={(value) =>
+            `${(Number(value) * 100).toFixed(2)}%`
+          }
+        />
+        <Bar
+          dataKey="value"
+          name="Importance"
+          radius={[0, 4, 4, 0]}
+        />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function DistributionChart({ data }) {
+  const classes = Array.isArray(data?.classes) ? data.classes : [];
+
+  if (!classes.length) {
+    return (
+      <div className="empty-chart">
+        No dynamic risk distribution available for this scenario.
+      </div>
+    );
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <PieChart>
+        <Pie
+          data={classes}
+          dataKey="pct"
+          nameKey="class"
+          innerRadius={55}
+          outerRadius={90}
+          paddingAngle={2}
+        >
+          {classes.map((c) => (
+            <Cell key={c.class} fill={RISK_COLORS[c.class] || "#8996a2"} />
+          ))}
+        </Pie>
+        <Tooltip formatter={(value, name) => [`${Number(value).toFixed(1)}%`, name]} />
+        <Legend
+          layout="vertical"
+          align="right"
+          verticalAlign="middle"
+          formatter={(value) => <span className="legend-text">{value}</span>}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
+export function RainChart({ data }) {
+  const chartData = toArray(data);
+
+  return (
+    <ResponsiveContainer width="100%" height={240}>
+      <LineChart data={chartData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="date" hide />
+        <YAxis />
+        <Tooltip />
+        <Line
+          type="monotone"
+          dataKey="rainfall"
+          strokeWidth={2}
+          dot={false}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\LocationPanel.jsx =====
+
+import React from "react";
+import {X,MapPin,AlertTriangle} from 'lucide-react';
+export default function LocationPanel({item,onClose}){if(!item)return null;return <aside className="location-panel"><button className="icon-btn close" onClick={onClose}><X/></button><div className="panel-kicker"><MapPin size={15}/> SELECTED LOCATION</div><h2>{item.kind||'Location'}</h2><div className="coords">{Number(item.lat).toFixed(5)}Â° N&nbsp;&nbsp; {Number(item.lon).toFixed(5)}Â° E</div><div className="detail-risk"><AlertTriangle size={17}/><span>Risk assessment</span><b>{item.props?.priority||item.props?.risk_class||'Available via API'}</b></div><div className="details">{Object.entries(item.props||{}).slice(0,8).map(([k,v])=><div key={k}><span>{k.replaceAll('_',' ')}</span><b>{String(v)}</b></div>)}</div></aside>}
+
+
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\MetricCard.jsx =====
+
+import React from "react";
+export default function MetricCard({label,value,sub,tone='neutral'}){return <div className={`metric ${tone}`}><div className="metric-label">{label}</div><div className="metric-value">{value ?? '-'}</div>{sub&&<div className="metric-sub">{sub}</div>}</div>}
+
+
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\MonitoringAlerts.jsx =====
+
+import React, { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, ShieldAlert, MapPinned } from "lucide-react";
+import { api } from "../services/api";
+
+const PRIORITY_ORDER = ["CRITICAL", "VERY HIGH", "VERY_HIGH", "HIGH"];
+
+function normPriority(p) {
+  return String(p || "").toUpperCase().replaceAll("_", " ").trim();
+}
+
+function actionFor(priority) {
+  if (priority === "CRITICAL") return "Prioritize monitoring";
+  if (priority === "VERY HIGH") return "Prioritize monitoring";
+  if (priority === "HIGH") return "Review exposure";
+  return "Routine monitoring";
+}
+
+function toRows(collection, kind) {
+  const arr = Array.isArray(collection)
+    ? collection
+    : collection?.features || [];
+
+  return arr.map((f) => {
+    const p = f.properties || f;
+    const priority = normPriority(p.priority || p.risk_class || p.risk);
+    return {
+      kind,
+      name: p.name || p.highway || p.place || `Unnamed ${kind}`,
+      type: p.highway || p.place || kind,
+      priority,
+      score: p.mean_risk ?? p.max_risk ?? p.risk ?? null,
+    };
+  });
+}
+
+export default function MonitoringAlerts({ date }) {
+  const [roads, setRoads] = useState([]);
+  const [settlements, setSettlements] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+
+    Promise.all([api.roads(), api.settlements()])
+      .then(([r, s]) => {
+        if (!active) return;
+        setRoads(r || []);
+        setSettlements(s || []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("Monitoring alerts error:", err);
+        setError("Unable to load infrastructure data.");
+      })
+      .finally(() => active && setLoading(false));
+
+    return () => {
+      active = false;
+    };
+  }, [date]);
+
+  const alerts = useMemo(() => {
+    const rows = [...toRows(roads, "road"), ...toRows(settlements, "settlement")];
+
+    return rows
+      .filter((r) => PRIORITY_ORDER.includes(r.priority))
+      .sort((a, b) => {
+        const ai = PRIORITY_ORDER.indexOf(a.priority);
+        const bi = PRIORITY_ORDER.indexOf(b.priority);
+        if (ai !== bi) return ai - bi;
+        return (b.score ?? 0) - (a.score ?? 0);
+      })
+      .slice(0, 8);
+  }, [roads, settlements]);
+
+  return (
+    <section className="card alerts-card">
+      <div className="card-head">
+        <div>
+          <span className="card-kicker">OPERATIONAL PANEL</span>
+          <h3>Monitoring Alerts</h3>
+        </div>
+        <ShieldAlert size={18} />
+      </div>
+
+      {loading && <div className="empty small">Loading alertsâ€¦</div>}
+
+      {!loading && error && <div className="empty small error">{error}</div>}
+
+      {!loading && !error && alerts.length === 0 && (
+        <div className="empty small">
+          No CRITICAL, VERY HIGH, or HIGH priority assets in the current scenario.
+        </div>
+      )}
+
+      {!loading && !error && alerts.length > 0 && (
+        <ul className="alert-list">
+          {alerts.map((a, i) => (
+            <li key={i} className={`alert-item sev-${a.priority.replace(" ", "-").toLowerCase()}`}>
+              <AlertTriangle size={15} />
+              <div className="alert-body">
+                <div className="alert-top">
+                  <b>{a.priority}</b>
+                  <span className="alert-type">
+                    <MapPinned size={11} /> {a.type}
+                  </span>
+                </div>
+                <div className="alert-name">{a.name}</div>
+                <div className="alert-meta">
+                  {a.score != null && (
+                    <span>Risk score: {Number(a.score).toFixed(3)}</span>
+                  )}
+                  <span className="alert-action">{actionFor(a.priority)}</span>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="disclaimer">
+        Scenario-based decision support â€” not an official warning.
+      </div>
+    </section>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\RiskBadge.jsx =====
+
+import React from "react";
+const cls={LOW:'low',MODERATE:'moderate',ELEVATED:'elevated',HIGH:'high',VERY_HIGH:'very-high',EXTREME:'extreme'};
+export default function RiskBadge({value}){const v=String(value||'NO DATA').toUpperCase().replace(/ /g,'_');return <span className={`badge ${cls[v]||'nodata'}`}><i/>{String(value||'NO DATA').replace('_',' ')}</span>}
+
+
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\RiskEngine.jsx =====
+
+import React from "react";
+import { Mountain, Layers, CloudRain, Activity, Building2, ArrowRight } from "lucide-react";
+
+const STAGES = [
+  {
+    icon: Mountain,
+    title: "Terrain",
+    desc: "Elevation, slope, aspect and curvature describe the physical landscape.",
+  },
+  {
+    icon: Layers,
+    title: "Susceptibility",
+    desc: "Terrain features create a static susceptibility surface via the Random Forest model.",
+  },
+  {
+    icon: CloudRain,
+    title: "Rainfall Trigger",
+    desc: "IMD rainfall accumulation changes the scenario's trigger intensity.",
+  },
+  {
+    icon: Activity,
+    title: "Dynamic Risk",
+    desc: "Susceptibility combined with the rainfall trigger for the selected date.",
+  },
+  {
+    icon: Building2,
+    title: "Impact",
+    desc: "Infrastructure overlay identifies potentially exposed roads and settlements.",
+  },
+];
+
+export default function RiskEngine() {
+  return (
+    <section className="card engine-card">
+      <div className="card-head">
+        <div>
+          <span className="card-kicker">RISK ENGINE</span>
+          <h3>How a scenario is built</h3>
+        </div>
+      </div>
+
+      <div className="engine-pipeline">
+        {STAGES.map((s, i) => (
+          <React.Fragment key={s.title}>
+            <div className="engine-stage">
+              <div className="engine-icon">
+                <s.icon size={18} />
+              </div>
+              <b>{s.title}</b>
+              <span>{s.desc}</span>
+            </div>
+            {i < STAGES.length - 1 && (
+              <div className="engine-arrow">
+                <ArrowRight size={16} />
+              </div>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\RiskLegend.jsx =====
+
+import React from "react";
+import RiskBadge from './RiskBadge';
+export default function RiskLegend(){return <div className="legend"><div className="legend-title">DYNAMIC RISK</div>{['LOW','MODERATE','ELEVATED','HIGH','VERY_HIGH','EXTREME'].map(x=><RiskBadge key={x} value={x}/>)}</div>}
+
+
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\RiskMap.jsx =====
+
+import React, { useEffect, useMemo } from "react";
+
+import {
+  MapContainer,
+  TileLayer,
+  CircleMarker,
+  Polyline,
+  Popup,
+  ImageOverlay,
+  useMap,
+} from "react-leaflet";
+
+import RiskLegend from "./RiskLegend";
+
+const center = [25.55, 91.35];
+
+const MAX_ROADS_ON_MAP = 6000;
+const MAX_LANDSLIDES_ON_MAP = 1200;
+const MAX_SETTLEMENTS_ON_MAP = 1200;
+
+const RISK = {
+  LOW: {
+    color: "#22c55e",
+    label: "LOW",
+  },
+  MODERATE: {
+    color: "#facc15",
+    label: "MODERATE",
+  },
+  ELEVATED: {
+    color: "#f59e0b",
+    label: "ELEVATED",
+  },
+  HIGH: {
+    color: "#f97316",
+    label: "HIGH",
+  },
+  VERY_HIGH: {
+    color: "#ef4444",
+    label: "VERY HIGH",
+  },
+  EXTREME: {
+    color: "#991b1b",
+    label: "CRITICAL",
+  },
+  CRITICAL: {
+    color: "#991b1b",
+    label: "CRITICAL",
+  },
+};
+
+function normalizeRisk(value) {
+  if (value === null || value === undefined || value === "") {
+    return "NO DATA";
+  }
+
+  const text = String(value)
+    .trim()
+    .toUpperCase()
+    .replace(/-/g, "_")
+    .replace(/\s+/g, "_");
+
+  if (text === "EXTREME") return "EXTREME";
+  if (text === "CRITICAL") return "CRITICAL";
+  if (text === "VERY_HIGH") return "VERY_HIGH";
+  if (text === "HIGH") return "HIGH";
+  if (text === "ELEVATED") return "ELEVATED";
+  if (text === "MODERATE") return "MODERATE";
+  if (text === "LOW") return "LOW";
+
+  return "NO DATA";
+}
+
+function getRiskFromProperties(properties = {}) {
+  const direct =
+    properties.risk_category ??
+    properties.risk_class ??
+    properties.risk_level ??
+    properties.priority ??
+    properties.risk;
+
+  if (direct !== undefined && direct !== null) {
+    return normalizeRisk(direct);
+  }
+
+  const numeric =
+    properties.risk_score ??
+    properties.dynamic_risk ??
+    properties.risk_value ??
+    properties.score;
+
+  if (numeric !== undefined && numeric !== null) {
+    const value = Number(numeric);
+
+    if (!Number.isNaN(value)) {
+      if (value >= 0.95) return "EXTREME";
+      if (value >= 0.85) return "VERY_HIGH";
+      if (value >= 0.70) return "HIGH";
+      if (value >= 0.50) return "ELEVATED";
+      if (value >= 0.30) return "MODERATE";
+      return "LOW";
+    }
+  }
+
+  return "NO DATA";
+}
+
+function riskColor(risk) {
+  return RISK[risk]?.color || "#94a3b8";
+}
+
+function riskLabel(risk) {
+  return RISK[risk]?.label || risk.replaceAll("_", " ");
+}
+
+function FitMap({ bounds }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!bounds) return;
+
+    map.fitBounds(bounds, {
+      padding: [30, 30],
+    });
+  }, [map, bounds]);
+
+  return null;
+}
+
+export default function RiskMap({
+  date,
+  landslides = [],
+  settlements = [],
+  roads = [],
+  selected,
+  setSelected,
+  scenario,
+  compact = false,
+}) {
+  const points = Array.isArray(landslides)
+    ? landslides
+    : landslides?.features || [];
+
+  const places = Array.isArray(settlements)
+    ? settlements
+    : settlements?.features || [];
+
+  const roadLines = Array.isArray(roads)
+    ? roads
+    : roads?.features || [];
+
+  const overlayBounds = useMemo(() => {
+    if (!scenario?.bounds || scenario.bounds.length !== 4) {
+      return null;
+    }
+
+    const [left, bottom, right, top] = scenario.bounds;
+
+    return [
+      [bottom, left],
+      [top, right],
+    ];
+  }, [scenario]);
+
+  const overlayUrl =
+    `http://127.0.0.1:8000/api/risk/overlay?date=${date}`;
+
+  const select = (payload) => {
+    if (setSelected) {
+      setSelected(payload);
+    }
+  };
+
+  return (
+    <div className={`map-wrap ${compact ? "compact" : ""}`}>
+
+      <MapContainer
+        center={center}
+        zoom={compact ? 7 : 8}
+        scrollWheelZoom={!compact}
+        dragging={!compact}
+        zoomControl={!compact}
+        doubleClickZoom={!compact}
+        className="risk-map"
+      >
+
+        {/* BASE MAP */}
+
+        <TileLayer
+          attribution="© OpenStreetMap contributors"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        {/* DYNAMIC RISK RASTER
+            Keep this BELOW markers/roads using zIndex */}
+        {overlayBounds && (
+          <ImageOverlay
+            key={`${date}-${overlayUrl}`}
+            url={overlayUrl}
+            bounds={overlayBounds}
+            opacity={0.48}
+            zIndex={1}
+          />
+        )}
+
+        {overlayBounds && (
+          <FitMap bounds={overlayBounds} />
+        )}
+
+        {/* =====================================================
+            ROADS
+            ===================================================== */}
+
+        {!compact &&
+          roadLines
+            .slice(0, MAX_ROADS_ON_MAP)
+            .map((feature, index) => {
+
+              const geometry = feature.geometry;
+
+              if (!geometry) return null;
+
+              const lines =
+                geometry.type === "LineString"
+                  ? [geometry.coordinates]
+                  : geometry.type === "MultiLineString"
+                  ? geometry.coordinates
+                  : [];
+
+              const properties =
+                feature.properties || {};
+
+              const risk =
+                getRiskFromProperties(properties);
+
+              const color =
+                riskColor(risk);
+
+              return lines.map(
+                (coords, lineIndex) => {
+
+                  if (!coords?.length) {
+                    return null;
+                  }
+
+                  const middle =
+                    coords[
+                      Math.floor(
+                        coords.length / 2
+                      )
+                    ];
+
+                  return (
+                    <Polyline
+                      key={`road-${index}-${lineIndex}`}
+                      positions={coords.map(
+                        ([lon, lat]) => [
+                          lat,
+                          lon,
+                        ]
+                      )}
+                      pane="markerPane"
+                      pathOptions={{
+                        color,
+                        weight:
+                          risk === "EXTREME" ||
+                          risk === "CRITICAL"
+                            ? 4
+                            : risk === "VERY_HIGH"
+                            ? 3
+                            : risk === "HIGH"
+                            ? 2.5
+                            : 1.8,
+                        opacity:
+                          risk === "NO DATA"
+                            ? 0.25
+                            : 0.9,
+                      }}
+                      eventHandlers={{
+                        click: () => {
+
+                          if (!middle) return;
+
+                          const [
+                            lon,
+                            lat,
+                          ] = middle;
+
+                          select({
+                            kind: "Road",
+                            lat,
+                            lon,
+                            props: {
+                              ...properties,
+                              risk_category:
+                                riskLabel(risk),
+                            },
+                          });
+                        },
+                      }}
+                    />
+                  );
+                }
+              );
+            })}
+
+        {/* =====================================================
+            HISTORICAL GSI LANDSLIDES
+            BLACK OUTLINE + RED FILL
+            ===================================================== */}
+
+        {points
+          .slice(0, MAX_LANDSLIDES_ON_MAP)
+          .map((feature, index) => {
+
+            const coordinates =
+              feature.geometry?.coordinates ||
+              [feature.lon, feature.lat];
+
+            if (
+              !coordinates ||
+              coordinates.length < 2
+            ) {
+              return null;
+            }
+
+            const [lon, lat] = coordinates;
+
+            const properties =
+              feature.properties || {};
+
+            return (
+              <CircleMarker
+                key={`landslide-${index}`}
+                center={[lat, lon]}
+                pane="markerPane"
+                radius={compact ? 3.5 : 6}
+                pathOptions={{
+                  color: "#000000",
+                  fillColor: "#ff0000",
+                  fillOpacity: 1,
+                  weight: 2,
+                }}
+                eventHandlers={{
+                  click: () =>
+                    select({
+                      kind:
+                        "Historical GSI Landslide",
+                      lat,
+                      lon,
+                      props: properties,
+                    }),
+                }}
+              >
+                {!compact && (
+                  <Popup>
+                    <b>
+                      Historical GSI Landslide
+                    </b>
+
+                    <br />
+
+                    District:{" "}
+                    {properties.district ||
+                      "Meghalaya"}
+                  </Popup>
+                )}
+              </CircleMarker>
+            );
+          })}
+
+        {/* =====================================================
+            SETTLEMENTS
+            RISK-COLORED DOTS
+            ===================================================== */}
+
+        {places
+          .slice(0, MAX_SETTLEMENTS_ON_MAP)
+          .map((feature, index) => {
+
+            const coordinates =
+              feature.geometry?.coordinates ||
+              [feature.lon, feature.lat];
+
+            if (
+              !coordinates ||
+              coordinates.length < 2
+            ) {
+              return null;
+            }
+
+            const [lon, lat] =
+              coordinates;
+
+            const properties =
+              feature.properties || feature;
+
+            const risk =
+              getRiskFromProperties(
+                properties
+              );
+
+            const color =
+              riskColor(risk);
+
+            return (
+              <CircleMarker
+                key={`settlement-${index}`}
+                center={[lat, lon]}
+                pane="markerPane"
+                radius={
+                  risk === "EXTREME" ||
+                  risk === "CRITICAL"
+                    ? 9
+                    : risk === "VERY_HIGH"
+                    ? 8
+                    : risk === "HIGH"
+                    ? 7
+                    : 5
+                }
+                pathOptions={{
+                  color: "#ffffff",
+                  fillColor: color,
+                  fillOpacity: 1,
+                  weight: 2,
+                }}
+                eventHandlers={{
+                  click: () =>
+                    select({
+                      kind:
+                        properties.name ||
+                        "Settlement",
+                      lat,
+                      lon,
+                      props: {
+                        ...properties,
+                        risk_category:
+                          riskLabel(risk),
+                      },
+                    }),
+                }}
+              >
+                {!compact && (
+                  <Popup>
+                    <b>
+                      {properties.name ||
+                        "Settlement"}
+                    </b>
+
+                    <br />
+
+                    Risk:{" "}
+                    <strong>
+                      {riskLabel(risk)}
+                    </strong>
+                  </Popup>
+                )}
+              </CircleMarker>
+            );
+          })}
+
+      </MapContainer>
+
+      {/* LEGEND */}
+
+      {!compact && <RiskLegend />}
+
+      {/* SCENARIO LABEL */}
+
+      {!compact && (
+        <div className="map-badge">
+          DYNAMIC RISK | {date}
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\Sidebar.jsx =====
+
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { LayoutDashboard, Map, Route, BrainCircuit, Activity, Mountain } from "lucide-react";
+
+export default function Sidebar() {
+  return (
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-icon">
+          <Mountain size={18} />
+        </div>
+        <div>
+          <b>LANDSLIDE<span>AI</span></b>
+          <small>GEOSPATIAL RISK INTELLIGENCE</small>
+        </div>
+      </div>
+
+      <div className="nav-label">MONITOR</div>
+      <NavLink to="/" end className="nav">
+        <LayoutDashboard /> Overview
+      </NavLink>
+      <NavLink to="/risk-map" className="nav">
+        <Map /> Risk Map
+      </NavLink>
+      <NavLink to="/infrastructure" className="nav">
+        <Route /> Infrastructure
+      </NavLink>
+
+      <div className="nav-label">ANALYSIS</div>
+      <NavLink to="/model" className="nav">
+        <BrainCircuit /> Model Insights
+      </NavLink>
+
+      <div className="sidebar-bottom">
+        <div className="status">
+          <Activity size={15} />
+          <div>
+            <small>SYSTEM STATUS</small>
+            <b><i /> Risk Engine Online</b>
+          </div>
+        </div>
+        <div className="data-note">
+          <small>DATA SOURCES</small>
+          <span>GSI Â· DEM Â· ESA WorldCover</span>
+          <span>IMD Rainfall Â· OpenStreetMap</span>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\components\Topbar.jsx =====
+
+import React from "react";
+import { CalendarDays, RefreshCw, Wifi, WifiOff } from "lucide-react";
+
+export default function Topbar({ date, setDate, onRefresh, loading, apiOnline }) {
+  return (
+    <header className="topbar">
+      <div>
+        <div className="eyebrow">MEGHALAYA Â· INDIA</div>
+        <h1>Operational Risk Overview</h1>
+      </div>
+
+      <div className="top-actions">
+        <label className="date-control">
+          <CalendarDays size={16} />
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </label>
+
+        <button className="refresh" onClick={onRefresh}>
+          <RefreshCw size={16} className={loading ? "spin" : ""} /> Refresh
+        </button>
+
+        <div className={`live ${apiOnline === false ? "offline" : ""}`}>
+          {apiOnline === false ? <WifiOff size={15} /> : <Wifi size={15} />}
+          {apiOnline === false ? "API OFFLINE" : "API ONLINE"}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\pages\Infrastructure.jsx =====
+
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  Building2,
+  CheckCircle2,
+  CircleAlert,
+  MapPin,
+  Route,
+  Search,
+  ShieldAlert,
+} from "lucide-react";
+
+import { api } from "../services/api";
+
+const RISK_ORDER = [
+  "CRITICAL",
+  "EXTREME",
+  "VERY HIGH",
+  "HIGH",
+  "ELEVATED",
+  "MODERATE",
+  "LOW",
+  "NO DATA",
+];
+
+const RISK_COLORS = {
+  CRITICAL: "#991b1b",
+  EXTREME: "#991b1b",
+  "VERY HIGH": "#ef4444",
+  HIGH: "#f97316",
+  ELEVATED: "#f59e0b",
+  MODERATE: "#facc15",
+  LOW: "#22c55e",
+  "NO DATA": "#94a3b8",
+};
+
+function normalizeRisk(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "NO DATA";
+  }
+
+  const text = String(value)
+    .trim()
+    .toUpperCase()
+    .replace(/-/g, "_")
+    .replace(/\s+/g, "_");
+
+  if (
+    text === "EXTREME" ||
+    text === "CRITICAL"
+  ) {
+    return "CRITICAL";
+  }
+
+  if (text === "VERY_HIGH") {
+    return "VERY HIGH";
+  }
+
+  if (text === "HIGH") {
+    return "HIGH";
+  }
+
+  if (text === "ELEVATED") {
+    return "ELEVATED";
+  }
+
+  if (text === "MODERATE") {
+    return "MODERATE";
+  }
+
+  if (text === "LOW") {
+    return "LOW";
+  }
+
+  return "NO DATA";
+}
+
+function getRisk(item) {
+  const props =
+    item?.properties || item || {};
+
+  const direct =
+    props.risk_category ??
+    props.risk_class ??
+    props.risk_level ??
+    props.priority ??
+    props.risk;
+
+  if (
+    direct !== undefined &&
+    direct !== null
+  ) {
+    return normalizeRisk(direct);
+  }
+
+  const numeric =
+    props.risk_score ??
+    props.dynamic_risk ??
+    props.risk_value ??
+    props.score;
+
+  if (
+    numeric !== undefined &&
+    numeric !== null
+  ) {
+    const value = Number(numeric);
+
+    if (!Number.isNaN(value)) {
+      if (value >= 0.95) return "CRITICAL";
+      if (value >= 0.85) return "VERY HIGH";
+      if (value >= 0.70) return "HIGH";
+      if (value >= 0.50) return "ELEVATED";
+      if (value >= 0.30) return "MODERATE";
+      return "LOW";
+    }
+  }
+
+  return "NO DATA";
+}
+
+function getName(item, fallback) {
+  const props =
+    item?.properties || item || {};
+
+  return (
+    props.name ||
+    props.NAME ||
+    props.Name ||
+    props.road_name ||
+    props.highway ||
+    props.ref ||
+    fallback
+  );
+}
+
+function getCoordinates(item) {
+  const geometry =
+    item?.geometry;
+
+  if (
+    geometry?.type === "Point" &&
+    geometry.coordinates?.length >= 2
+  ) {
+    return {
+      lon: geometry.coordinates[0],
+      lat: geometry.coordinates[1],
+    };
+  }
+
+  if (
+    item?.lon !== undefined &&
+    item?.lat !== undefined
+  ) {
+    return {
+      lon: item.lon,
+      lat: item.lat,
+    };
+  }
+
+  return null;
+}
+
+function RiskBadge({ risk }) {
+  return (
+    <span
+      className="infra-risk-badge"
+      style={{
+        borderColor:
+          RISK_COLORS[risk],
+        color:
+          RISK_COLORS[risk],
+      }}
+    >
+      {risk}
+    </span>
+  );
+}
+
+function KPI({
+  icon,
+  label,
+  value,
+  sub,
+}) {
+  return (
+    <div className="infra-kpi">
+      <div className="infra-kpi-icon">
+        {icon}
+      </div>
+
+      <div>
+        <div className="infra-kpi-label">
+          {label}
+        </div>
+
+        <div className="infra-kpi-value">
+          {value}
+        </div>
+
+        <div className="infra-kpi-sub">
+          {sub}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Infrastructure() {
+
+  const [roads, setRoads] = useState([]);
+  const [settlements, setSettlements] =
+    useState([]);
+
+  const [search, setSearch] =
+    useState("");
+
+  const [filter, setFilter] =
+    useState("ALL");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState(null);
+
+  useEffect(() => {
+
+    let active = true;
+
+    setLoading(true);
+    setError(null);
+
+    Promise.all([
+      api.roads(),
+      api.settlements(),
+    ])
+      .then(
+        ([
+          roadData,
+          settlementData,
+        ]) => {
+
+          if (!active) return;
+
+          setRoads(
+            Array.isArray(roadData)
+              ? roadData
+              : []
+          );
+
+          setSettlements(
+            Array.isArray(
+              settlementData
+            )
+              ? settlementData
+              : []
+          );
+        }
+      )
+      .catch((err) => {
+
+        console.error(
+          "Infrastructure error:",
+          err
+        );
+
+        if (active) {
+          setError(
+            "Infrastructure data could not be loaded."
+          );
+        }
+      })
+      .finally(() => {
+
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+
+  }, []);
+
+  const roadStats = useMemo(() => {
+
+    const counts = {};
+
+    RISK_ORDER.forEach(
+      (risk) => {
+        counts[risk] = 0;
+      }
+    );
+
+    roads.forEach((road) => {
+      counts[getRisk(road)]++;
+    });
+
+    return counts;
+
+  }, [roads]);
+
+  const settlementStats =
+    useMemo(() => {
+
+      const counts = {};
+
+      RISK_ORDER.forEach(
+        (risk) => {
+          counts[risk] = 0;
+        }
+      );
+
+      settlements.forEach(
+        (settlement) => {
+          counts[
+            getRisk(settlement)
+          ]++;
+        }
+      );
+
+      return counts;
+
+    }, [settlements]);
+
+  const roadHighPlus =
+    roadStats.HIGH +
+    roadStats["VERY HIGH"] +
+    roadStats.CRITICAL;
+
+  const settlementHighPlus =
+    settlementStats.HIGH +
+    settlementStats["VERY HIGH"] +
+    settlementStats.CRITICAL;
+
+  const criticalTotal =
+    roadStats.CRITICAL +
+    settlementStats.CRITICAL;
+
+  const filteredRoads =
+    useMemo(() => {
+
+      const q =
+        search.trim().toLowerCase();
+
+      return roads
+        .map((item) => ({
+          item,
+          risk: getRisk(item),
+        }))
+        .filter(({ item, risk }) => {
+
+          if (
+            filter !== "ALL" &&
+            risk !== filter
+          ) {
+            return false;
+          }
+
+          if (!q) return true;
+
+          const props =
+            item?.properties || item;
+
+          return JSON.stringify(
+            props
+          )
+            .toLowerCase()
+            .includes(q);
+        })
+        .slice(0, 100);
+
+    }, [roads, search, filter]);
+
+  const filteredSettlements =
+    useMemo(() => {
+
+      const q =
+        search.trim().toLowerCase();
+
+      return settlements
+        .map((item) => ({
+          item,
+          risk: getRisk(item),
+        }))
+        .filter(({ item, risk }) => {
+
+          if (
+            filter !== "ALL" &&
+            risk !== filter
+          ) {
+            return false;
+          }
+
+          if (!q) return true;
+
+          const props =
+            item?.properties || item;
+
+          return JSON.stringify(
+            props
+          )
+            .toLowerCase()
+            .includes(q);
+        })
+        .slice(0, 100);
+
+    }, [
+      settlements,
+      search,
+      filter,
+    ]);
+
+  if (loading) {
+    return (
+      <main className="page">
+        <div className="infra-loading">
+          Loading infrastructure intelligence…
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="page">
+
+      {/* HEADER */}
+
+      <div className="infra-header">
+
+        <div>
+          <span className="eyebrow">
+            EXPOSURE INTELLIGENCE
+          </span>
+
+          <h2>
+            Infrastructure Risk
+          </h2>
+
+          <p>
+            Roads and settlements
+            potentially exposed to
+            dynamic landslide risk.
+          </p>
+        </div>
+
+        <div className="infra-status">
+          <ShieldAlert size={18} />
+          Decision-support analysis
+        </div>
+
+      </div>
+
+      {error && (
+        <div className="banner-error">
+          {error}
+        </div>
+      )}
+
+      {/* KPI ROW */}
+
+      <section className="infra-kpis">
+
+        <KPI
+          icon={<Route size={21} />}
+          label="ROADS ANALYSED"
+          value={roads.length.toLocaleString()}
+          sub="Road segments in dataset"
+        />
+
+        <KPI
+          icon={<Building2 size={21} />}
+          label="SETTLEMENTS"
+          value={settlements.length.toLocaleString()}
+          sub="Mapped settlement points"
+        />
+
+        <KPI
+          icon={<AlertTriangle size={21} />}
+          label="HIGH+ ROADS"
+          value={roadHighPlus.toLocaleString()}
+          sub="High, very high or critical"
+        />
+
+        <KPI
+          icon={<CircleAlert size={21} />}
+          label="HIGH+ SETTLEMENTS"
+          value={settlementHighPlus.toLocaleString()}
+          sub="Potentially exposed"
+        />
+
+        <KPI
+          icon={<ShieldAlert size={21} />}
+          label="CRITICAL"
+          value={criticalTotal.toLocaleString()}
+          sub="Highest-priority assets"
+        />
+
+      </section>
+
+      {/* RISK DISTRIBUTION */}
+
+      <section className="infra-grid">
+
+        <div className="infra-card">
+
+          <div className="infra-card-title">
+            <div>
+              <h3>
+                Road Risk Distribution
+              </h3>
+              <span>
+                Classified infrastructure
+              </span>
+            </div>
+
+            <Route size={20} />
+          </div>
+
+          <div className="infra-bars">
+
+            {RISK_ORDER
+              .filter(
+                (risk) =>
+                  roadStats[risk] > 0
+              )
+              .map((risk) => {
+
+                const value =
+                  roadStats[risk];
+
+                const percentage =
+                  roads.length
+                    ? (
+                        value /
+                        roads.length
+                      ) *
+                      100
+                    : 0;
+
+                return (
+                  <div
+                    className="infra-bar-row"
+                    key={risk}
+                  >
+
+                    <div className="infra-bar-label">
+                      <span>
+                        <i
+                          style={{
+                            background:
+                              RISK_COLORS[
+                                risk
+                              ],
+                          }}
+                        />
+                        {risk}
+                      </span>
+
+                      <strong>
+                        {value.toLocaleString()}
+                      </strong>
+                    </div>
+
+                    <div className="infra-bar-track">
+                      <div
+                        className="infra-bar-fill"
+                        style={{
+                          width:
+                            `${Math.max(
+                              percentage,
+                              value > 0
+                                ? 1
+                                : 0
+                            )}%`,
+                          background:
+                            RISK_COLORS[
+                              risk
+                            ],
+                        }}
+                      />
+                    </div>
+
+                    <small>
+                      {percentage.toFixed(
+                        1
+                      )}
+                      %
+                    </small>
+
+                  </div>
+                );
+              })}
+
+          </div>
+
+        </div>
+
+        <div className="infra-card">
+
+          <div className="infra-card-title">
+            <div>
+              <h3>
+                Settlement Risk
+              </h3>
+              <span>
+                Potentially exposed locations
+              </span>
+            </div>
+
+            <MapPin size={20} />
+          </div>
+
+          <div className="infra-bars">
+
+            {RISK_ORDER
+              .filter(
+                (risk) =>
+                  settlementStats[
+                    risk
+                  ] > 0
+              )
+              .map((risk) => {
+
+                const value =
+                  settlementStats[
+                    risk
+                  ];
+
+                const percentage =
+                  settlements.length
+                    ? (
+                        value /
+                        settlements.length
+                      ) *
+                      100
+                    : 0;
+
+                return (
+                  <div
+                    className="infra-bar-row"
+                    key={risk}
+                  >
+
+                    <div className="infra-bar-label">
+                      <span>
+                        <i
+                          style={{
+                            background:
+                              RISK_COLORS[
+                                risk
+                              ],
+                          }}
+                        />
+
+                        {risk}
+                      </span>
+
+                      <strong>
+                        {value.toLocaleString()}
+                      </strong>
+                    </div>
+
+                    <div className="infra-bar-track">
+                      <div
+                        className="infra-bar-fill"
+                        style={{
+                          width:
+                            `${Math.max(
+                              percentage,
+                              value > 0
+                                ? 1
+                                : 0
+                            )}%`,
+                          background:
+                            RISK_COLORS[
+                              risk
+                            ],
+                        }}
+                      />
+                    </div>
+
+                    <small>
+                      {percentage.toFixed(
+                        1
+                      )}
+                      %
+                    </small>
+
+                  </div>
+                );
+              })}
+
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* TABLE */}
+
+      <section className="infra-card infra-table-card">
+
+        <div className="infra-table-header">
+
+          <div>
+            <h3>
+              Infrastructure Priority Register
+            </h3>
+
+            <span>
+              Inspect assets by calculated risk class
+            </span>
+          </div>
+
+          <div className="infra-controls">
+
+            <div className="infra-search">
+              <Search size={16} />
+
+              <input
+                value={search}
+                onChange={(e) =>
+                  setSearch(
+                    e.target.value
+                  )
+                }
+                placeholder="Search infrastructure..."
+              />
+            </div>
+
+            <select
+              value={filter}
+              onChange={(e) =>
+                setFilter(
+                  e.target.value
+                )
+              }
+            >
+              <option value="ALL">
+                All risk levels
+              </option>
+
+              {RISK_ORDER
+                .filter(
+                  (risk) =>
+                    risk !== "NO DATA"
+                )
+                .map((risk) => (
+                  <option
+                    value={risk}
+                    key={risk}
+                  >
+                    {risk}
+                  </option>
+                ))}
+            </select>
+
+          </div>
+
+        </div>
+
+        <div className="infra-table-wrap">
+
+          <table className="infra-table">
+
+            <thead>
+              <tr>
+                <th>Infrastructure</th>
+                <th>Type</th>
+                <th>Risk</th>
+                <th>Coordinates</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {filteredRoads
+                .slice(0, 50)
+                .map(
+                  ({
+                    item,
+                    risk,
+                  }, index) => {
+
+                    const coordinates =
+                      getCoordinates(
+                        item
+                      );
+
+                    return (
+                      <tr
+                        key={`road-row-${index}`}
+                      >
+
+                        <td>
+                          {getName(
+                            item,
+                            `Road segment ${index + 1}`
+                          )}
+                        </td>
+
+                        <td>
+                          <span className="infra-type">
+                            <Route size={14} />
+                            Road
+                          </span>
+                        </td>
+
+                        <td>
+                          <RiskBadge
+                            risk={risk}
+                          />
+                        </td>
+
+                        <td>
+                          {coordinates
+                            ? `${coordinates.lat.toFixed(
+                                4
+                              )}, ${coordinates.lon.toFixed(
+                                4
+                              )}`
+                            : "—"}
+                        </td>
+
+                        <td>
+                          {risk ===
+                            "CRITICAL" ||
+                          risk ===
+                            "VERY HIGH" ? (
+                            <span className="infra-priority">
+                              <AlertTriangle
+                                size={14}
+                              />
+                              Priority
+                            </span>
+                          ) : (
+                            <span className="infra-normal">
+                              <CheckCircle2
+                                size={14}
+                              />
+                              Monitor
+                            </span>
+                          )}
+                        </td>
+
+                      </tr>
+                    );
+                  }
+                )}
+
+              {filteredSettlements
+                .slice(0, 50)
+                .map(
+                  ({
+                    item,
+                    risk,
+                  }, index) => {
+
+                    const coordinates =
+                      getCoordinates(
+                        item
+                      );
+
+                    return (
+                      <tr
+                        key={`settlement-row-${index}`}
+                      >
+
+                        <td>
+                          {getName(
+                            item,
+                            `Settlement ${index + 1}`
+                          )}
+                        </td>
+
+                        <td>
+                          <span className="infra-type">
+                            <Building2
+                              size={14}
+                            />
+                            Settlement
+                          </span>
+                        </td>
+
+                        <td>
+                          <RiskBadge
+                            risk={risk}
+                          />
+                        </td>
+
+                        <td>
+                          {coordinates
+                            ? `${coordinates.lat.toFixed(
+                                4
+                              )}, ${coordinates.lon.toFixed(
+                                4
+                              )}`
+                            : "—"}
+                        </td>
+
+                        <td>
+                          {risk ===
+                            "CRITICAL" ||
+                          risk ===
+                            "VERY HIGH" ? (
+                            <span className="infra-priority">
+                              <AlertTriangle
+                                size={14}
+                              />
+                              Priority
+                            </span>
+                          ) : (
+                            <span className="infra-normal">
+                              <CheckCircle2
+                                size={14}
+                              />
+                              Monitor
+                            </span>
+                          )}
+                        </td>
+
+                      </tr>
+                    );
+                  }
+                )}
+
+            </tbody>
+
+          </table>
+
+          {!filteredRoads.length &&
+            !filteredSettlements.length && (
+              <div className="infra-empty">
+                No infrastructure matches
+                the selected filter.
+              </div>
+            )}
+
+        </div>
+
+      </section>
+
+      {/* DISCLAIMER */}
+
+      <div className="infra-disclaimer">
+        <AlertTriangle size={15} />
+
+        Risk classes represent model-based
+        decision-support estimates. They are
+        not official disaster warnings or
+        guaranteed landslide predictions.
+      </div>
+
+    </main>
+  );
+}
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\pages\ModelInsights.jsx =====
+
+import React, { useEffect, useState } from "react";
+import MetricCard from "../components/MetricCard";
+import { FeatureChart } from "../components/Charts";
+import { api } from "../services/api";
+
+// Fallbacks match the known, already-computed Random Forest metrics for this
+// project so the page stays useful if the backend is briefly unreachable.
+const FALLBACK_RF = {
+  model: "Random Forest",
+  accuracy: 0.7152,
+  precision: 0.6506,
+  recall: 0.7606,
+  f1: 0.7013,
+  roc_auc: 0.812,
+  pr_auc: 0.7592,
+};
+
+function pick(row, ...keys) {
+  for (const k of keys) {
+    const v = row?.[k] ?? row?.[k?.toUpperCase()] ?? row?.[k?.toLowerCase()];
+    if (v != null) return v;
+  }
+  return null;
+}
+
+function fmt(v) {
+  return v == null ? "â€”" : Number(v).toFixed(3);
+}
+
+export default function ModelInsights() {
+  const [rows, setRows] = useState([]);
+  const [features, setFeatures] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all([api.metrics(), api.features()])
+      .then(([metricData, featureData]) => {
+        if (!active) return;
+        const list = Array.isArray(metricData) ? metricData : [];
+        setRows(list.length ? list : [FALLBACK_RF]);
+        setFeatures(Array.isArray(featureData) ? featureData : []);
+      })
+      .catch((err) => {
+        console.error("Model insights error:", err);
+        if (active) {
+          setError("Could not reach the model metrics API â€” showing last known Random Forest results.");
+          setRows([FALLBACK_RF]);
+        }
+      })
+      .finally(() => active && setLoading(false));
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const primary =
+    rows.find((r) => String(pick(r, "model", "name") || "").toLowerCase().includes("forest")) ||
+    rows[0] ||
+    FALLBACK_RF;
+
+  return (
+    <main className="page">
+      <div className="page-heading">
+        <div>
+          <span className="eyebrow">MODEL TRANSPARENCY</span>
+          <h2>Model Insights</h2>
+          <p>Spatially held-out evaluation of the static susceptibility baseline.</p>
+        </div>
+      </div>
+
+      {loading && <div className="empty small">Loading model metricsâ€¦</div>}
+      {error && <div className="banner-error">{error}</div>}
+
+      <div className="metrics">
+        <MetricCard label="F1 SCORE" value={fmt(pick(primary, "f1", "f1_score"))} sub="Random Forest" />
+        <MetricCard label="RECALL" value={fmt(pick(primary, "recall"))} sub="Random Forest" tone="danger" />
+        <MetricCard label="ROC-AUC" value={fmt(pick(primary, "roc_auc", "rocauc"))} sub="Random Forest" />
+        <MetricCard label="PR-AUC" value={fmt(pick(primary, "pr_auc", "prauc"))} sub="Random Forest" />
+      </div>
+
+      <div className="two-col">
+        <section className="card">
+          <div className="card-head">
+            <div>
+              <span className="card-kicker">FEATURE IMPORTANCE</span>
+              <h3>What drives susceptibility</h3>
+            </div>
+          </div>
+
+          <FeatureChart data={features} />
+
+          <div className="note">
+            Slope is the strongest feature in the current baseline. Importance describes
+            model behavior, not causal proof.
+          </div>
+        </section>
+
+        <section className="card table-card">
+          <div className="card-head" style={{ padding: "20px 20px 0" }}>
+            <div>
+              <span className="card-kicker">MODEL COMPARISON</span>
+              <h3>Random Forest vs. baseline</h3>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1</th>
+                <th>ROC-AUC</th>
+                <th>PR-AUC</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td>{pick(r, "model", "name") || (i === 0 ? "Random Forest" : "Model")}</td>
+                  <td>{fmt(pick(r, "accuracy"))}</td>
+                  <td>{fmt(pick(r, "precision"))}</td>
+                  <td>{fmt(pick(r, "recall"))}</td>
+                  <td>{fmt(pick(r, "f1", "f1_score"))}</td>
+                  <td>{fmt(pick(r, "roc_auc", "rocauc"))}</td>
+                  <td>{fmt(pick(r, "pr_auc", "prauc"))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <div className="card" style={{ marginTop: 12 }}>
+        <div className="card-head">
+          <div>
+            <span className="card-kicker">METHODOLOGY</span>
+            <h3>Model pipeline</h3>
+          </div>
+        </div>
+
+        <ol className="pipeline">
+          <li>
+            <b>Historical labels</b>
+            <span>GSI landslide inventory + spatially separated negatives</span>
+          </li>
+          <li>
+            <b>Static features</b>
+            <span>Elevation, slope, aspect, curvature, land cover</span>
+          </li>
+          <li>
+            <b>Classifier</b>
+            <span>Random Forest primary; Logistic Regression baseline</span>
+          </li>
+          <li>
+            <b>Dynamic layer</b>
+            <span>Rainfall accumulation converted to a composite trigger</span>
+          </li>
+          <li>
+            <b>Impact layer</b>
+            <span>Roads and settlements overlaid for prioritization</span>
+          </li>
+        </ol>
+      </div>
+    </main>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\pages\Overview.jsx =====
+
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { api } from "../services/api";
+import MetricCard from "../components/MetricCard";
+import RiskMap from "../components/RiskMap";
+import MonitoringAlerts from "../components/MonitoringAlerts";
+import RiskEngine from "../components/RiskEngine";
+import { DistributionChart } from "../components/Charts";
+
+const RAIN_WINDOWS = [
+  { key: "rainfall_1d", label: "1 day" },
+  { key: "rainfall_3d", label: "3 day" },
+  { key: "rainfall_7d", label: "7 day" },
+  { key: "rainfall_15d", label: "15 day" },
+  { key: "rainfall_30d", label: "30 day" },
+];
+
+export default function Overview({ date }) {
+  const [summary, setSummary] = useState(null);
+  const [distribution, setDistribution] = useState(null);
+  const [landslides, setLandslides] = useState([]);
+  const [settlements, setSettlements] = useState([]);
+  const [scenario, setScenario] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+
+    Promise.all([
+      api.summary(date),
+      api.distribution(date).catch(() => null),
+      api.landslides().catch(() => []),
+      api.settlements().catch(() => []),
+      api.scenario(date).catch(() => null),
+    ])
+      .then(([s, dist, ls, st, sc]) => {
+        if (!active) return;
+        setSummary(s);
+        setDistribution(dist);
+        setLandslides(ls || []);
+        setSettlements(st || []);
+        setScenario(sc);
+      })
+      .catch((err) => {
+        console.error("Overview loading failed:", err);
+        if (active) setError("Some sections could not reach the API. Is the FastAPI backend running on port 8000?");
+      })
+      .finally(() => active && setLoading(false));
+
+    return () => {
+      active = false;
+    };
+  }, [date]);
+
+  const historical = summary?.historical_landslides ?? 0;
+  const roads = summary?.roads ?? 0;
+  const settlementsCount = summary?.settlements ?? 0;
+
+  const highRisk =
+    summary?.high_plus_risk_fraction != null
+      ? `${(Number(summary.high_plus_risk_fraction) * 100).toFixed(1)}%`
+      : "N/A";
+
+  const rainRow = summary?.rainfall || {};
+  const availableWindows = RAIN_WINDOWS.filter((w) => rainRow[w.key] != null);
+
+  return (
+    <main className="page">
+
+      <section className="hero">
+        <div>
+          <span className="pill">SCENARIO {date}</span>
+          <h2>
+            Dynamic landslide <em>risk intelligence.</em>
+          </h2>
+          <p>
+            Terrain susceptibility combined with rainfall triggers and infrastructure
+            exposure for Meghalaya, updated per scenario date.
+          </p>
+          <Link to="/risk-map" className="primary">
+            Open full risk map
+          </Link>
+        </div>
+
+        <div className="hero-stats">
+          <div>
+            <small>MEAN DYNAMIC RISK</small>
+            <b>{rainRow.trigger_score != null ? Number(rainRow.trigger_score).toFixed(3) : "N/A"}</b>
+          </div>
+          <div>
+            <small>SCENARIO DATE</small>
+            <b>{date}</b>
+          </div>
+        </div>
+      </section>
+
+      {error && <div className="banner-error">{error}</div>}
+
+      <div className="metrics">
+        <MetricCard
+          label="HISTORICAL LANDSLIDES"
+          value={historical.toLocaleString()}
+          sub="GSI Meghalaya inventory"
+        />
+        <MetricCard
+          label="ROAD FEATURES"
+          value={roads.toLocaleString()}
+          sub="OSM infrastructure"
+        />
+        <MetricCard
+          label="SETTLEMENTS"
+          value={settlementsCount.toLocaleString()}
+          sub="OSM infrastructure"
+        />
+        <MetricCard
+          label="HIGH+ RISK AREA"
+          value={highRisk}
+          sub={`Scenario ${date}`}
+          tone="danger"
+        />
+      </div>
+
+      <div className="two-col">
+        <section className="card map-preview-card">
+          <div className="card-head">
+            <div>
+              <span className="card-kicker">RISK MAP</span>
+              <h3>Meghalaya snapshot</h3>
+            </div>
+            <Link to="/risk-map" className="text-link">Open full map â†’</Link>
+          </div>
+          <div className="mini-map-frame">
+            <RiskMap
+              date={date}
+              landslides={landslides}
+              settlements={settlements}
+              scenario={scenario}
+              compact
+            />
+          </div>
+        </section>
+
+        <MonitoringAlerts date={date} />
+      </div>
+
+      <div className="two-col">
+        <RiskEngine />
+
+        <section className="card">
+          <div className="card-head">
+            <div>
+              <span className="card-kicker">RAINFALL TRIGGER</span>
+              <h3>Accumulation windows</h3>
+            </div>
+          </div>
+
+          {availableWindows.length > 0 ? (
+            <div className="rain-grid">
+              {availableWindows.map((w) => (
+                <div key={w.key} className="rain-cell">
+                  <small>{w.label}</small>
+                  <b>{Number(rainRow[w.key]).toFixed(1)} mm</b>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty small">
+              Multi-day rainfall breakdown not available for this scenario date.
+            </div>
+          )}
+
+          <div className="stat-grid" style={{ marginTop: 16 }}>
+            <div>
+              <small>Trigger score</small>
+              <strong>{rainRow.trigger_score != null ? Number(rainRow.trigger_score).toFixed(3) : "N/A"}</strong>
+            </div>
+            <div>
+              <small>Risk raster</small>
+              <strong>{summary?.risk_raster_available ? "Available" : "Unavailable"}</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div className="two-col">
+        <section className="card">
+          <div className="card-head">
+            <div>
+              <span className="card-kicker">DYNAMIC RISK</span>
+              <h3>Distribution across classes</h3>
+            </div>
+          </div>
+          <DistributionChart data={distribution} />
+          <div className="note">
+            Computed directly from the dynamic risk raster for scenario {date}.
+          </div>
+        </section>
+
+        <section className="card">
+          <div className="card-head">
+            <div>
+              <span className="card-kicker">DATA SOURCES</span>
+              <h3>What powers this scenario</h3>
+            </div>
+          </div>
+          <ol className="pipeline">
+            <li>
+              <b>Terrain</b>
+              <span>30m elevation, slope, aspect and curvature</span>
+            </li>
+            <li>
+              <b>Land cover</b>
+              <span>ESA WorldCover 2021, 10m</span>
+            </li>
+            <li>
+              <b>Rainfall</b>
+              <span>IMD gridded rainfall, ~0.25Â° resolution, 2015â€“2025</span>
+            </li>
+            <li>
+              <b>Infrastructure</b>
+              <span>OpenStreetMap roads and settlements</span>
+            </li>
+          </ol>
+        </section>
+      </div>
+
+    </main>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\pages\RiskMapPage.jsx =====
+
+import React, { useEffect, useState } from "react";
+import { api } from "../services/api";
+import RiskMap from "../components/RiskMap";
+import LocationPanel from "../components/LocationPanel";
+
+export default function RiskMapPage({ date }) {
+  const [ls, setLs] = useState([]);
+  const [st, setSt] = useState([]);
+  const [rd, setRd] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [stats, setStats] = useState({});
+  const [scenario, setScenario] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+
+    Promise.all([
+      api.landslides(),
+      api.settlements(),
+      api.roads(),
+      api.statistics(date),
+      api.scenario(date)
+    ])
+      .then(([landslides, settlements, roads, statistics, scenarioData]) => {
+        if (!active) return;
+        setLs(landslides || []);
+        setSt(settlements || []);
+        setRd(roads || []);
+        setStats(statistics || {});
+        setScenario(scenarioData || null);
+      })
+      .catch((err) => {
+        console.error("Risk map error:", err);
+        if (active) setError("Some map data could not be loaded. Showing what's available.");
+      })
+      .finally(() => active && setLoading(false));
+
+    return () => {
+      active = false;
+    };
+  }, [date]);
+
+  return (
+    <main className="page full">
+
+      <div className="map-header">
+        <div>
+          <span className="eyebrow">
+            SCENARIO | {date}
+          </span>
+
+          <h2>Dynamic Landslide Risk Map</h2>
+
+          <p>
+            Terrain susceptibility + rainfall trigger |
+            30m output grid | rainfall source ~0.25 degree
+          </p>
+        </div>
+
+        <div className="map-stat">
+          <small>MEAN DYNAMIC RISK</small>
+          <b>
+            {stats.mean != null
+              ? Number(stats.mean).toFixed(3)
+              : "N/A"}
+          </b>
+        </div>
+      </div>
+
+      {error && <div className="banner-error">{error}</div>}
+
+      <div className="map-card">
+
+        <RiskMap
+          date={date}
+          landslides={ls}
+          settlements={st}
+          roads={rd}
+          scenario={scenario}
+          selected={selected}
+          setSelected={setSelected}
+        />
+
+        <LocationPanel
+          item={selected}
+          onClose={() => setSelected(null)}
+        />
+
+        {loading && <div className="map-loading">Loading map data…</div>}
+
+      </div>
+
+    </main>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\services\api.js =====
+
+const BASE_URL =
+  "http://127.0.0.1:8000/api";
+
+
+async function get(path) {
+
+  const response =
+    await fetch(BASE_URL + path);
+
+  if (!response.ok) {
+
+    throw new Error(
+      `${response.status} ${response.statusText}`
+    );
+  }
+
+  return response.json();
+}
+
+
+function extractArray(value) {
+
+  if (typeof value === "string") {
+
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+
+  if (Array.isArray(value.features)) {
+    return value.features;
+  }
+
+  const possibleKeys = [
+    "data",
+    "items",
+    "results",
+    "roads",
+    "settlements",
+    "landslides",
+    "records",
+    "values",
+  ];
+
+  for (const key of possibleKeys) {
+
+    if (Array.isArray(value[key])) {
+      return value[key];
+    }
+  }
+
+  for (const key of Object.keys(value)) {
+
+    if (Array.isArray(value[key])) {
+      return value[key];
+    }
+  }
+
+  return [];
+}
+
+
+export const api = {
+  health: () => get("/health"),
+  summary: (date) => get(`/summary${date ? `?date=${date}` : ""}`),
+  statistics: (date) => get(`/risk/statistics?date=${date}`),
+  scenario: (date) => get(`/risk/scenario?date=${date}`),
+  distribution: (date) => get(`/risk/distribution?date=${date}`),
+  point: (lat, lon, date) =>
+    get(`/risk/point?lat=${lat}&lon=${lon}&date=${date}`),
+
+  overlayUrl: (date) =>
+    `${BASE_URL}/risk/overlay?date=${date}`,
+
+  landslides: async () =>
+    extractArray(await get("/landslides")),
+
+  roads: async () =>
+    extractArray(
+      await get("/infrastructure/roads?limit=20000")
+    ),
+
+  settlements: async () =>
+    extractArray(
+      await get("/infrastructure/settlements?limit=5000")
+    ),
+
+  metrics: async () => {
+    let value = await get("/model/metrics");
+
+    if (typeof value === "string") {
+      try {
+        value = JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+
+    return Array.isArray(value)
+      ? value
+      : value?.metrics || [];
+  },
+
+  features: async () => {
+    let value = await get("/model/features");
+
+    if (typeof value === "string") {
+      try {
+        value = JSON.parse(value);
+      } catch {
+        return [];
+      }
+    }
+
+    return Array.isArray(value)
+      ? value
+      : value?.features || [];
+  },
+
+  rainfallScenario: (date) =>
+    get(`/rainfall/scenario?date=${date}`),
+};
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\App.jsx =====
+
+import React, { useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
+
+import Sidebar from "./components/Sidebar";
+import Topbar from "./components/Topbar";
+
+import Overview from "./pages/Overview";
+import RiskMapPage from "./pages/RiskMapPage";
+import Infrastructure from "./pages/Infrastructure";
+import ModelInsights from "./pages/ModelInsights";
+
+import { api } from "./services/api";
+
+export default function App() {
+  const [date, setDate] = useState("2022-06-21");
+  const [loading, setLoading] = useState(false);
+  const [apiOnline, setApiOnline] = useState(null);
+
+  const checkHealth = async () => {
+    try {
+      await api.health();
+      setApiOnline(true);
+    } catch (error) {
+      console.warn("Backend is not available yet:", error);
+      setApiOnline(false);
+    }
+  };
+
+  useEffect(() => {
+    checkHealth();
+    const interval = setInterval(checkHealth, 20000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const refresh = async () => {
+    setLoading(true);
+    await checkHealth();
+    setTimeout(() => setLoading(false), 500);
+  };
+
+  return (
+    <div className="app">
+      <Sidebar />
+
+      <div className="content">
+        <Topbar
+          date={date}
+          setDate={setDate}
+          onRefresh={refresh}
+          loading={loading}
+          apiOnline={apiOnline}
+        />
+
+        {apiOnline === false && (
+          <div className="banner-error top">
+            Can't reach the FastAPI backend at http://127.0.0.1:8000. Start it with{" "}
+            <code>uvicorn app.main:app --reload --port 8000</code>.
+          </div>
+        )}
+
+        <Routes>
+          <Route path="/" element={<Overview date={date} />} />
+          <Route path="/risk-map" element={<RiskMapPage date={date} />} />
+          <Route path="/infrastructure" element={<Infrastructure />} />
+          <Route path="/model" element={<ModelInsights />} />
+        </Routes>
+      </div>
+    </div>
+  );
+}
+
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\index.css =====
+
+/* ============================================================
+   INFRASTRUCTURE INTELLIGENCE
+   ============================================================ */
+
+.infra-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.infra-header h2 {
+  margin: 5px 0 8px;
+  color: #102a43;
+  font-size: 28px;
+  letter-spacing: -0.5px;
+}
+
+.infra-header p {
+  margin: 0;
+  color: #627d98;
+}
+
+.infra-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #e8f4fb;
+  color: #126782;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.infra-kpis {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.infra-kpi {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  background: white;
+  border: 1px solid #d9e7f0;
+  border-radius: 14px;
+  padding: 17px;
+  box-shadow:
+    0 5px 18px rgba(16, 42, 67, 0.06);
+}
+
+.infra-kpi-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #e7f5fb;
+  color: #13779b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.infra-kpi-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #829ab1;
+  letter-spacing: 0.7px;
+}
+
+.infra-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #102a43;
+  margin-top: 2px;
+}
+
+.infra-kpi-sub {
+  color: #829ab1;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.infra-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.infra-card {
+  background: white;
+  border: 1px solid #d9e7f0;
+  border-radius: 15px;
+  box-shadow:
+    0 5px 18px rgba(16, 42, 67, 0.06);
+  padding: 20px;
+}
+
+.infra-card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  color: #13779b;
+}
+
+.infra-card-title h3 {
+  margin: 0;
+  color: #102a43;
+  font-size: 17px;
+}
+
+.infra-card-title span {
+  display: block;
+  margin-top: 4px;
+  color: #829ab1;
+  font-size: 12px;
+}
+
+.infra-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.infra-bar-row {
+  display: grid;
+  grid-template-columns:
+    130px 1fr 45px;
+  align-items: center;
+  gap: 10px;
+}
+
+.infra-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  color: #486581;
+}
+
+.infra-bar-label span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.infra-bar-label i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.infra-bar-label strong {
+  color: #243b53;
+}
+
+.infra-bar-track {
+  height: 8px;
+  border-radius: 20px;
+  background: #edf2f7;
+  overflow: hidden;
+}
+
+.infra-bar-fill {
+  height: 100%;
+  border-radius: 20px;
+  min-width: 2px;
+}
+
+.infra-bar-row small {
+  color: #829ab1;
+  text-align: right;
+}
+
+.infra-table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.infra-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  border-bottom: 1px solid #e6eef4;
+}
+
+.infra-table-header h3 {
+  margin: 0;
+  color: #102a43;
+  font-size: 17px;
+}
+
+.infra-table-header span {
+  color: #829ab1;
+  font-size: 12px;
+}
+
+.infra-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.infra-search {
+  width: 230px;
+  height: 36px;
+  border: 1px solid #d9e7f0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  color: #829ab1;
+}
+
+.infra-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12px;
+  color: #243b53;
+}
+
+.infra-controls select {
+  height: 36px;
+  border: 1px solid #d9e7f0;
+  border-radius: 8px;
+  background: white;
+  color: #486581;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.infra-table-wrap {
+  overflow-x: auto;
+}
+
+.infra-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.infra-table th {
+  text-align: left;
+  padding: 12px 18px;
+  background: #f6f9fb;
+  color: #829ab1;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.infra-table td {
+  padding: 13px 18px;
+  border-top: 1px solid #edf2f7;
+  color: #486581;
+}
+
+.infra-table tbody tr:hover {
+  background: #f8fbfd;
+}
+
+.infra-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  background: white;
+}
+
+.infra-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #627d98;
+}
+
+.infra-priority {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.infra-normal {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #16a34a;
+}
+
+.infra-empty,
+.infra-loading {
+  padding: 50px;
+  text-align: center;
+  color: #829ab1;
+}
+
+.infra-disclaimer {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #829ab1;
+  font-size: 11px;
+}
+
+@media (max-width: 1100px) {
+
+  .infra-kpis {
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+
+}
+
+@media (max-width: 800px) {
+
+  .infra-kpis,
+  .infra-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .infra-header,
+  .infra-table-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .infra-controls {
+    width: 100%;
+  }
+
+  .infra-search {
+    flex: 1;
+  }
+
+}
+
+
+===== FILE: C:\Users\Naveen\Desktop\YHACK-LANDSLIDE\frontend\src\main.jsx =====
+
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+);

@@ -1,0 +1,8 @@
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+*.tif
+*.nc
+*.h5
+*.hdf5
