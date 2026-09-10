@@ -6,3 +6,6 @@ __pycache__/
 *.nc
 *.h5
 *.hdf5
+# Deployment rasters are intentionally committed
+!deployment_data/
+!deployment_data/**/*.tif
